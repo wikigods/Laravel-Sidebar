@@ -10,9 +10,8 @@ use Maatwebsite\Sidebar\Menu;
 use Maatwebsite\Sidebar\Traits\AuthorizableTrait;
 use Maatwebsite\Sidebar\Traits\CacheableTrait;
 use Maatwebsite\Sidebar\Traits\CallableTrait;
-use Serializable;
 
-class DefaultMenu implements Menu, Serializable
+class DefaultMenu implements Menu
 {
     use CallableTrait, CacheableTrait, AuthorizableTrait;
 
@@ -118,5 +117,35 @@ class DefaultMenu implements Menu, Serializable
         }
 
         return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function __serialize(): array
+    {
+        // When caching, we need to make sure we are not caching a mock object.
+        // We'll transform it back to a real group instance.
+        $this->groups->transform(function (Group $group) {
+            if ($group instanceof \Mockery\MockInterface) {
+                $newGroup = new DefaultGroup(
+                    \Illuminate\Container\Container::getInstance()
+                );
+                $newGroup->name($group->getName());
+
+                return $newGroup;
+            }
+
+            return $group;
+        });
+
+        $cacheables = [];
+        foreach ($this->getCacheables() as $cacheable) {
+            if (property_exists($this, $cacheable)) {
+                $cacheables[$cacheable] = $this->{$cacheable};
+            }
+        }
+
+        return $cacheables;
     }
 }

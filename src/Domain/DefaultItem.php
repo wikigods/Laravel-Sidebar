@@ -13,9 +13,8 @@ use Maatwebsite\Sidebar\Traits\CacheableTrait;
 use Maatwebsite\Sidebar\Traits\CallableTrait;
 use Maatwebsite\Sidebar\Traits\ItemableTrait;
 use Maatwebsite\Sidebar\Traits\RouteableTrait;
-use Serializable;
 
-class DefaultItem implements Item, Serializable
+class DefaultItem implements Item
 {
     use CallableTrait, CacheableTrait, ItemableTrait, RouteableTrait, AuthorizableTrait;
 

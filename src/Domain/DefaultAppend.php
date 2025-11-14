@@ -8,9 +8,8 @@ use Maatwebsite\Sidebar\Traits\AuthorizableTrait;
 use Maatwebsite\Sidebar\Traits\CacheableTrait;
 use Maatwebsite\Sidebar\Traits\CallableTrait;
 use Maatwebsite\Sidebar\Traits\RouteableTrait;
-use Serializable;
 
-class DefaultAppend implements Append, Serializable
+class DefaultAppend implements Append
 {
     use CallableTrait, CacheableTrait, RouteableTrait, AuthorizableTrait;
 

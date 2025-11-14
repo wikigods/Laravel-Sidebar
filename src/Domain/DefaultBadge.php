@@ -7,9 +7,8 @@ use Maatwebsite\Sidebar\Badge;
 use Maatwebsite\Sidebar\Traits\AuthorizableTrait;
 use Maatwebsite\Sidebar\Traits\CacheableTrait;
 use Maatwebsite\Sidebar\Traits\CallableTrait;
-use Serializable;
 
-class DefaultBadge implements Badge, Serializable
+class DefaultBadge implements Badge
 {
     use CallableTrait, CacheableTrait, AuthorizableTrait;
 

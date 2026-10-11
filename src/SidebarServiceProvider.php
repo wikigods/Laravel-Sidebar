@@ -3,9 +3,17 @@
 namespace Maatwebsite\Sidebar;
 
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Maatwebsite\Sidebar\Authorization\NullPermissionResolver;
+use Maatwebsite\Sidebar\Authorization\PermissionResolver;
+use Maatwebsite\Sidebar\Authorization\SentinelPermissionResolver;
+use Maatwebsite\Sidebar\Authorization\SpatiePermissionResolver;
+use Maatwebsite\Sidebar\Console\SidebarInstallCommand;
+use Maatwebsite\Sidebar\Exceptions\LogicException;
 use Maatwebsite\Sidebar\Infrastructure\SidebarFlusherFactory;
 use Maatwebsite\Sidebar\Infrastructure\SidebarResolverFactory;
+use Maatwebsite\Sidebar\Presentation\SidebarRenderer;
 
 class SidebarServiceProvider extends ServiceProvider
 {
@@ -27,6 +35,14 @@ class SidebarServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerViews();
+        $this->registerMiddlewareAlias();
+        $this->registerSidebar();
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                SidebarInstallCommand::class,
+            ]);
+        }
     }
 
     /**
@@ -60,6 +76,23 @@ class SidebarServiceProvider extends ServiceProvider
 
         // Bind manager
         $this->app->singleton('Maatwebsite\Sidebar\SidebarManager');
+
+        $this->app->bind(PermissionResolver::class, function (Application $app) {
+            $resolver = $app['config']->get('sidebar.permissions.resolver');
+
+            if ($resolver) {
+                return $app->make($resolver);
+            }
+
+            return match ($app['config']->get('sidebar.permissions.driver', 'spatie')) {
+                'spatie' => new SpatiePermissionResolver($app['auth']->guard()),
+                'sentinel' => new SentinelPermissionResolver($app),
+                'none' => new NullPermissionResolver(),
+                default => throw new LogicException(
+                    'The configured sidebar permission driver is not supported.'
+                ),
+            };
+        });
 
         // Bind Menu
         $this->app->bind(
@@ -104,18 +137,27 @@ class SidebarServiceProvider extends ServiceProvider
      */
     protected function registerViews()
     {
-        $view = match (config('sidebar.view')){
+        $templates = [
+            'AdminLTE2' => 'adminlte-2',
             'AdminLTE3' => 'adminlte-3',
-            default => 'adminlte-2',
-        };
+        ];
+        $selectedTemplate = config('sidebar.view') === 'AdminLTE3' ? 'AdminLTE3' : 'AdminLTE2';
+        $destination = base_path('resources/views/vendor/' . $this->shortName);
 
-        $location = __DIR__ . "/../resources/views/{$view}";
+        foreach ($templates as $template => $directory) {
+            $location = __DIR__ . "/../resources/views/{$directory}";
 
-        $this->loadViewsFrom($location, $this->shortName);
+            $this->publishes([
+                $location => $destination,
+            ], 'sidebar-views-' . strtolower($template));
 
-        $this->publishes([
-            $location => base_path('resources/views/vendor/' . $this->shortName),
-        ], 'sidebar-views');
+            if ($template === $selectedTemplate) {
+                $this->loadViewsFrom($location, $this->shortName);
+                $this->publishes([
+                    $location => $destination,
+                ], 'sidebar-views');
+            }
+        }
     }
 
     /**
@@ -133,6 +175,51 @@ class SidebarServiceProvider extends ServiceProvider
         $this->publishes([
             $location => config_path($this->shortName . '.php'),
         ], 'sidebar-config');
+    }
+
+    protected function registerMiddlewareAlias(): void
+    {
+        $alias = config('sidebar.middleware.alias', 'sidebar');
+        $middleware = config(
+            'sidebar.middleware.class',
+            \Maatwebsite\Sidebar\Middleware\ResolveSidebars::class
+        );
+
+        $this->app['router']->aliasMiddleware($alias, $middleware);
+    }
+
+    protected function registerSidebar(): void
+    {
+        $sidebar = config('sidebar.sidebar.class');
+
+        if (!$sidebar) {
+            return;
+        }
+
+        if (!class_exists($sidebar) || !is_subclass_of($sidebar, Sidebar::class)) {
+            throw new LogicException(
+                'The configured sidebar class must exist and implement Maatwebsite\\Sidebar\\Sidebar.'
+            );
+        }
+
+        $this->app->make(SidebarManager::class)->register($sidebar);
+
+        $targetView = config('sidebar.sidebar.view');
+        $viewDataKey = config('sidebar.sidebar.key', 'sidebar');
+
+        if (!$targetView) {
+            return;
+        }
+
+        View::creator($targetView, function ($view) use ($sidebar, $viewDataKey): void {
+            $sidebarInstance = app($sidebar);
+            $renderer = app(SidebarRenderer::class);
+
+            $view->with(
+                $viewDataKey,
+                $renderer->render($sidebarInstance)
+            );
+        });
     }
 
     /**

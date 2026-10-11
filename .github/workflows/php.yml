@@ -8,26 +8,45 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      max-parallel: 2
+      fail-fast: false
       matrix:
-        php-versions: ['8.2', '8.3']
+        include:
+          - php-version: '8.1'
+            illuminate-version: '10.*'
+          - php-version: '8.2'
+            illuminate-version: '11.*'
+          - php-version: '8.2'
+            illuminate-version: '12.*'
+          - php-version: '8.3'
+            illuminate-version: '13.*'
 
-    name: PHP ${{ matrix.php-versions }}
+    name: PHP ${{ matrix.php-version }} / Laravel ${{ matrix.illuminate-version }}
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@master
+        uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-versions }}
+          php-version: ${{ matrix.php-version }}
           coverage: xdebug
 
-      - name: Validate composer.json and composer.lock
-        run: composer validate
+      - name: Select Laravel component version
+        run: >-
+          composer require --no-update --no-interaction
+          "illuminate/cache:${{ matrix.illuminate-version }}"
+          "illuminate/console:${{ matrix.illuminate-version }}"
+          "illuminate/container:${{ matrix.illuminate-version }}"
+          "illuminate/contracts:${{ matrix.illuminate-version }}"
+          "illuminate/routing:${{ matrix.illuminate-version }}"
+          "illuminate/support:${{ matrix.illuminate-version }}"
+          "illuminate/view:${{ matrix.illuminate-version }}"
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-suggest
+        run: composer update --prefer-dist --no-progress --no-interaction
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate --no-check-publish
 
       - name: Run test suite
         run: composer run-script test

@@ -1,0 +1,75 @@
+<?php
+
+return [
+    /*
+    |--------------------------------------------------------------------------
+    | Caching
+    |--------------------------------------------------------------------------
+    |
+    | Choose how sidebars should be cached.
+    | The configured Laravel cache store is used.
+    |
+    | Available methods: null, static, user-based.
+    | User-based caching requires a cache store that supports tags,
+    | such as Redis or Memcached.
+    |
+    */
+    'cache' => [
+        'method' => {{CACHE_METHOD}},
+        'duration' => {{CACHE_DURATION}},
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | View Name
+    |--------------------------------------------------------------------------
+    |
+    | Choose the package template used to render the sidebar.
+    | Built-in templates are AdminLTE2 and AdminLTE3.
+    | You can customize this value later in this configuration file.
+    |
+    */
+    'view' => {{TEMPLATE}},
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sidebar Integration
+    |--------------------------------------------------------------------------
+    |
+    | Configure the application sidebar class and the view that receives it.
+    |
+    */
+    'sidebar' => [
+        'class' => {{SIDEBAR_CLASS}},
+        'view' => {{TARGET_VIEW}},
+        'key' => {{VIEW_DATA_KEY}},
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Middleware
+    |--------------------------------------------------------------------------
+    |
+    | Register the sidebar middleware using this route alias.
+    | Example: Route::middleware(['auth', 'sidebar'])->group(...);
+    |
+    */
+    'middleware' => [
+        'alias' => {{MIDDLEWARE_ALIAS}},
+        'class' => Maatwebsite\Sidebar\Middleware\ResolveSidebars::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Permissions
+    |--------------------------------------------------------------------------
+    |
+    | Choose the permission system used by sidebar authorization checks.
+    | Available drivers: spatie, sentinel, none.
+    |
+    */
+    'permissions' => [
+        'driver' => {{PERMISSION_DRIVER}},
+        'resolver' => null,
+    ],
+];

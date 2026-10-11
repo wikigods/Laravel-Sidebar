@@ -5,31 +5,34 @@ namespace Maatwebsite\Sidebar\Traits;
 trait CacheableTrait
 {
     /**
-     * @return array
+     * String representation of object
+     * @link http://php.net/manual/en/serializable.serialize.php
+     * @return string the string representation of the object or null
      */
-    public function __serialize(): array
+    public function serialize()
     {
         $cacheables = [];
         foreach ($this->getCacheables() as $cacheable) {
-            if (property_exists($this, $cacheable)) {
-                $cacheables[$cacheable] = $this->{$cacheable};
-            }
+            $cacheables[$cacheable] = $this->{$cacheable};
         }
 
-        return $cacheables;
+        return serialize($cacheables);
     }
 
     /**
-     * @param array $data
+     * Constructs the object
+     * @link http://php.net/manual/en/serializable.unserialize.php
+     *
+     * @param string $serialized The string representation of the object.
+     *
+     * @return void
      */
-    public function __unserialize(array $data): void
+    public function unserialize($serialized)
     {
+        $data = unserialize($serialized);
+
         foreach ($data as $key => $value) {
             $this->{$key} = $value;
-        }
-
-        if (property_exists($this, 'container')) {
-            $this->container = \Illuminate\Container\Container::getInstance();
         }
     }
 
@@ -38,6 +41,6 @@ trait CacheableTrait
      */
     public function getCacheables(): array
     {
-        return $this->cacheables ?? [];
+        return $this->cacheables ?? ['menu'];
     }
 }

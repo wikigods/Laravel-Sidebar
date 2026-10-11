@@ -2,7 +2,6 @@
 
 namespace Maatwebsite\Sidebar\Tests\Domain;
 
-use Illuminate\Container\Container;
 use Maatwebsite\Sidebar\Domain\DefaultGroup;
 use Maatwebsite\Sidebar\Domain\DefaultItem;
 use Maatwebsite\Sidebar\Group;
@@ -24,13 +23,7 @@ class DefaultGroupTest extends TestCase
     protected function setUp(): void
     {
         $this->container = m::mock('Illuminate\Contracts\Container\Container');
-        Container::setInstance($this->container);
         $this->group     = new DefaultGroup($this->container);
-    }
-
-    protected function tearDown(): void
-    {
-        Container::setInstance(null);
     }
 
     public function test_can_instantiate_new_group()

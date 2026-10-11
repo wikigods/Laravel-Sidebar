@@ -42,10 +42,13 @@ class DefaultMenuTest extends TestCase
 
     public function test_menu_can_be_cached()
     {
-        $this->markTestSkipped("'Exception: Serialization of 'ReflectionClass' is not allowed'");
-        $this->mockContainerMake();
-        $this->menu->group('test');
-        $this->menu->group('test2');
+        $firstGroup = new DefaultGroup($this->container);
+        $firstGroup->name('test');
+        $this->menu->addGroup($firstGroup);
+
+        $secondGroup = new DefaultGroup($this->container);
+        $secondGroup->name('test2');
+        $this->menu->addGroup($secondGroup);
 
         $serialized   = serialize($this->menu);
         $unserialized = unserialize($serialized);
